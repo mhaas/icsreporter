@@ -13,8 +13,6 @@ def getCalObject(fileName):
   cal = Calendar.from_string(open(fileName, 'r').read())
   return cal
 
-
-
 # events: list of events
 # start: datetime
 # end: datetime
@@ -26,7 +24,11 @@ def filterEventListForTimePeriod(events, dStart, dEnd):
   for event in events:
     event = copy.deepcopy(event)
     dEventStart = datetime.strptime(str(event['DTSTART']), pattern)
-    dEventEnd = datetime.strptime(str(event['DTEND']), pattern + "Z")
+    try:
+      dEventEnd = datetime.strptime(str(event['DTEND']), pattern + "Z")
+    except ValueError:
+      # sometimes, the pattern is off?! FIXME
+      dEventEnd = datetime.strptime(str(event['DTEND']), pattern)
     # if the current event starts after filter end date, ignore
     if (dEventStart > dEnd):
       continue
@@ -66,7 +68,11 @@ def getWeekBoundaries(week, year):
 def getDuration(event):
     pattern="%Y%m%dT%H%M%S"
     dEventStart = datetime.strptime(str(event['DTSTART']), pattern)
-    dEventEnd = datetime.strptime(str(event['DTEND']), pattern + "Z")
+    try:
+      dEventEnd = datetime.strptime(str(event['DTEND']), pattern + "Z")
+    except ValueError:
+      # FIXME: pattern?
+      dEventEnd = datetime.strptime(str(event['DTEND']), pattern);
     diff = dEventEnd - dEventStart
     # from api docs. ::total_seconds() is available in python 2.7
     seconds = ((diff.microseconds + (diff.seconds + diff.days * 24 * 3600) * 10**6) / 10**6)
@@ -89,8 +95,8 @@ def dictPrinter(d):
   time = 0
   for (key, value) in d.items():
     time += value / 60
-    print key + ": " + str((value / 60)) + " minutes"
-  print "Total time: " + str(time) + " (" + str(time/60) + "h)"
+    print key + ": %.2f minutes" % (value / 60)
+  print "Total time: %.2f (%.2f h)"  % (time, time/60)
   
 def main():
 
